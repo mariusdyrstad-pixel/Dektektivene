@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Detektivene">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2b3c6b">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Detektivene Ester og Magnus</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#1d2a4a;font-family:"Avenir Next Rounded","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;color:#22304f;touch-action:manipulation}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation}
+#app{position:fixed;inset:0;max-width:520px;margin:0 auto;background:#fdf3e1;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 14px)}
+.screen.on{display:flex}
+h1{font-size:1.7rem;margin:.2em 0;text-align:center;color:#2b3c6b}
+h2{font-size:1.25rem;margin:.3em 0;text-align:center;color:#2b3c6b}
+.sub{text-align:center;font-size:1.05rem;margin:0 0 .6em}
+
+/* lås */
+#lock{background:linear-gradient(#2b3c6b,#5a4a8a 60%,#e98aa8);color:#fff;align-items:center;justify-content:center}
+#lock h1,#lock h2{color:#fff}
+.duo{display:flex;justify-content:center;gap:6px;height:130px}
+.duo svg{height:100%}
+.dots{display:flex;gap:14px;margin:14px 0 18px}
+.dots i{width:22px;height:22px;border-radius:50%;border:3px solid #fff}
+.dots i.f{background:#ffd75e;border-color:#ffd75e}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+.pad button{height:72px;border-radius:50%;background:rgba(255,255,255,.18);font-size:1.9rem;font-weight:700;color:#fff}
+.pad button:active{background:rgba(255,255,255,.4)}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-10px)}50%{transform:translateX(10px)}75%{transform:translateX(-6px)}}
+
+/* velg detektiv */
+#who{justify-content:center}
+.pick{display:flex;gap:14px;justify-content:center;margin-top:10px}
+.pick button{flex:1;max-width:210px;background:#fff;border-radius:26px;padding:14px 8px 12px;box-shadow:0 6px 0 #e4cfa6;font-size:1.5rem;font-weight:800}
+.pick button:active{transform:translateY(4px);box-shadow:0 2px 0 #e4cfa6}
+.pick svg{width:100%;height:200px}
+
+/* meny */
+#menu{overflow-y:auto}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.card{background:#fff;border-radius:22px;padding:14px 8px;box-shadow:0 5px 0 #e4cfa6;text-align:center;font-weight:800;font-size:1.02rem;position:relative;min-height:150px}
+.card .big{font-size:3.4rem;display:block;line-height:1.2}
+.card.locked{opacity:.55}
+.card small{display:block;font-weight:600;font-size:.85rem;margin-top:4px}
+.card .done{position:absolute;top:8px;right:10px;font-size:1.4rem}
+.linkbtn{margin:16px auto 0;font-size:1rem;text-decoration:underline;color:#2b3c6b;padding:10px}
+
+/* spill */
+#game{padding:0}
+.top{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;background:#2b3c6b;color:#fff}
+.top button{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.16);font-size:1.4rem}
+.top button.off{opacity:.4}
+#stars{flex:1;text-align:center;font-size:1.35rem;letter-spacing:2px}
+#stars .e{opacity:.25;filter:grayscale(1)}
+#stage{position:relative;flex:1;overflow:hidden}
+.bg-room{background:linear-gradient(#fde2c0 0 64%,#b9814c 64% 66%,#d9a56c 66%)}
+.bg-snow{background:linear-gradient(#bfe3ff,#eef7ff 55%,#ffffff)}
+.bg-barn{background:repeating-linear-gradient(90deg,#8a5a34 0 38px,#7c4f2c 38px 42px)}
+.bg-yard{background:#bfe3ff}
+.scene{position:absolute;inset:0;width:100%;height:100%}
+.it{position:absolute;transform:translate(-50%,-50%);line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.2))}
+.it:active{transform:translate(-50%,-50%) scale(1.15)}
+.it.opened{animation:pop .4s}
+.it .cl{position:absolute;right:-.5em;top:-.4em;font-size:.55em;background:#fff;border-radius:50%;padding:.15em;box-shadow:0 0 0 3px #ffd75e}
+.it.heard::after{content:"✅";position:absolute;right:-.3em;top:-.3em;font-size:.4em}
+@keyframes pop{50%{transform:translate(-50%,-50%) scale(1.3) rotate(-6deg)}}
+.wig{animation:wig 1s infinite}
+@keyframes wig{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-52%) rotate(-7deg)}75%{transform:translate(-50%,-52%) rotate(7deg)}}
+.col{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:12px}
+.showbox{background:rgba(255,255,255,.85);border-radius:22px;padding:12px 14px;font-size:2.5rem;text-align:center;line-height:1.35;max-width:100%;word-break:break-all}
+.opts{display:grid;gap:12px;grid-template-columns:repeat(3,1fr);width:100%;max-width:360px}
+.opts.n4{grid-template-columns:repeat(2,1fr);max-width:280px}
+.opts button{aspect-ratio:1;background:#fff;border-radius:22px;font-size:2.8rem;font-weight:800;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.opts.n9 button{font-size:2.3rem}
+.opts button svg{height:72%;vertical-align:middle}
+.opts button.ok{background:#b9f0b0;box-shadow:0 0 0 4px #4bb84b;pointer-events:none}
+.mem{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:380px}
+.mem button{aspect-ratio:3/4;border-radius:16px;background:#f3c64e;font-size:2.4rem;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.mem button.up{background:#fff}
+.mem button.m{background:#b9f0b0;pointer-events:none}
+.final{display:flex;align-items:flex-end;justify-content:center;gap:4px;font-size:4.5rem}
+.final svg{height:150px}
+.badge{font-size:7rem;animation:pop2 1s infinite alternate}
+@keyframes pop2{to{transform:scale(1.12) rotate(6deg)}}
+.bigbtn{background:#ff8fb0;color:#fff;font-size:1.4rem;font-weight:800;border-radius:30px;padding:14px 28px;box-shadow:0 5px 0 #d5628a}
+.conf{position:absolute;top:-40px;font-size:1.8rem;animation:fall 3.2s linear infinite;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+
+#panel{display:flex;gap:10px;align-items:center;background:#fff;border-top:5px solid #ffd75e;padding:10px 10px calc(env(safe-area-inset-bottom) + 10px);min-height:150px}
+#panel .av{width:74px;flex:none;text-align:center;font-size:3.2rem;line-height:1}
+#panel .av svg{width:74px;height:100px}
+#panel .bub{flex:1;background:#eef4ff;border-radius:18px;padding:10px 12px;font-size:1.12rem;line-height:1.3}
+#panel .bub b{display:block;font-size:.85rem;color:#5a6aa0;text-transform:uppercase;letter-spacing:.04em}
+#panel .btns{display:flex;flex-direction:column;gap:8px}
+#panel .btns button{width:58px;height:58px;border-radius:50%;font-size:1.6rem;background:#eef4ff}
+#panel .btns .next{background:#4bb84b;color:#fff;font-size:1.9rem;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.1)}}
+#panel .bub{min-height:84px}
+.ch{position:absolute;width:62px;transform:translate(-50%,-100%);transition:left .8s linear,top .8s linear;pointer-events:none;z-index:3;filter:drop-shadow(0 3px 2px rgba(0,0,0,.25))}
+.ch svg{display:block;width:100%}
+.ch.flip svg{transform:scaleX(-1)}
+.ch.walk .in{animation:bob .22s infinite alternate}
+.ch.talk .in{animation:bob .4s infinite alternate}
+@keyframes bob{to{transform:translateY(-6px)}}
+.it svg{height:1.3em;display:inline-block;vertical-align:bottom}
+.it.pair{white-space:nowrap}.zz{font-size:.5em}
+.it.okk{background:#b9f0b0;border-radius:50%;box-shadow:0 0 0 8px #b9f0b0}
+.it.glow{animation:glow .8s infinite alternate}
+@keyframes glow{from{filter:drop-shadow(0 0 4px #ffd400)}to{filter:drop-shadow(0 0 10px #ffd400) drop-shadow(0 0 22px #ffb000)}}
+.it.glow::after{content:"👆";position:absolute;left:50%;top:100%;font-size:1.7rem;animation:tap .5s infinite alternate}
+@keyframes tap{from{transform:translate(-50%,0)}to{transform:translate(-50%,9px)}}
+.it.hot{width:74px;height:86px;border-radius:12px;border:4px dashed #ffd400}
+.deco{position:absolute;font-size:3.2rem;opacity:.9}
+.col.board{padding-bottom:104px;justify-content:flex-start;padding-top:18px}
+.bg-floor{background:repeating-linear-gradient(0deg,#d9a56c 0 46px,#c9955c 46px 49px)}
+.bg-grass{background:linear-gradient(#bfe3ff 0 22%,#9cc56d 22% 25%,#b5d98a 25%)}
+.bg-wall{background:#cfe6d6}
+.bg-dark{background:#15182b}
+.bg-party{background:linear-gradient(#ffe9a8 0 64%,#b9814c 64% 66%,#d9a56c 66%)}
+.bg-tree{background:#bfe3ff}
+.it.dim{filter:brightness(.18)}.it.dim.opened{filter:none}
+.it.num{width:56px;height:56px;border-radius:50%;background:#3d8f3d;color:#fff;font-size:1.7rem!important;font-weight:800;border:3px solid #fff}
+.it.num.okk{background:#ffd75e;color:#333;box-shadow:none}
+#toast{position:absolute;left:12px;right:12px;top:12px;background:#fffbe6;border:3px solid #ffd75e;border-radius:18px;padding:10px 14px;font-size:1.1rem;z-index:5;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section class="screen on" id="lock">
+    <div class="duo" id="duo"></div>
+    <h1>Detektivene<br>Ester og Magnus</h1>
+    <h2 id="lockmsg">Skriv koden</h2>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="pad" id="pad"></div>
+  </section>
+
+  <section class="screen" id="who">
+    <h1>Hvem vil du være?</h1>
+    <div class="pick">
+      <button data-who="ester"><span id="pE"></span>Ester</button>
+      <button data-who="magnus"><span id="pM"></span>Magnus</button>
+    </div>
+  </section>
+
+  <section class="screen" id="menu">
+    <h1>Velg et oppdrag</h1>
+    <p class="sub" id="hello"></p>
+    <div class="cards" id="cards"></div>
+    <button class="linkbtn" id="swap">Bytt detektiv</button>
+  </section>
+
+  <section class="screen" id="game">
+    <div class="top">
+      <button id="home" aria-label="Hjem">🏠</button>
+      <div id="stars"></div>
+      <button id="hint" aria-label="Hint">💡</button>
+      <button id="mus" aria-label="Musikk">🎵</button>
+    </div>
+    <div id="stage"></div>
+    <div id="panel"></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const stage=$('#stage'),panel=$('#panel');
+const N={ester:'Ester',magnus:'Magnus'};
+const S={me:'ester',stars:0,total:6,hint:'',run:0,last:null,busy:false,sayId:0,floor:70,pos:{me:[40,95],pa:[58,96]},spot:[50,50]};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
+
+/* ---------- figurer ---------- */
+function kid(who){
+  const skin='#ffd9bf',mag='<g transform="translate(92,98)"><line x1="0" y1="0" x2="10" y2="16" stroke="#7a4b21" stroke-width="5" stroke-linecap="round"/><circle cx="-4" cy="-8" r="11" fill="#d8f1ff" stroke="#444" stroke-width="3.5"/></g>';
+  const face='<circle cx="49" cy="56" r="3.2" fill="#2a2a2a"/><circle cx="71" cy="56" r="3.2" fill="#2a2a2a"/><circle cx="41" cy="67" r="6" fill="#ff9fb0" opacity=".55"/><circle cx="79" cy="67" r="6" fill="#ff9fb0" opacity=".55"/><path d="M50 68 Q60 79 70 68" fill="#fff" stroke="#b5533c" stroke-width="2.5" stroke-linejoin="round"/>';
+  if(who==='ester') return `<svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+    <rect x="27" y="28" width="66" height="66" rx="26" fill="#f2d27a"/>
+    <rect x="45" y="122" width="12" height="24" fill="#f3ead8"/><rect x="63" y="122" width="12" height="24" fill="#f3ead8"/>
+    <ellipse cx="50" cy="149" rx="11" ry="7" fill="#33384a"/><ellipse cx="70" cy="149" rx="11" ry="7" fill="#33384a"/>
+    <rect x="34" y="82" width="52" height="46" rx="16" fill="#f29bb0"/>
+    <path d="M36 98 L24 116" stroke="#f29bb0" stroke-width="12" stroke-linecap="round"/><path d="M84 98 L92 106" stroke="#f29bb0" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="23" cy="118" r="6" fill="#33384a"/>
+    <ellipse cx="60" cy="84" rx="26" ry="8" fill="#d9a968"/>
+    <circle cx="60" cy="54" r="30" fill="${skin}"/>
+    <path d="M32 48 Q46 40 60 46 Q74 40 88 48 L88 40 L32 40Z" fill="#f2d27a"/>
+    <path d="M29 46 Q29 14 60 14 Q91 14 91 46 Q60 34 29 46Z" fill="#f7a8c4"/>
+    <circle cx="33" cy="20" r="8" fill="#ee86ad"/><circle cx="87" cy="20" r="8" fill="#ee86ad"/>
+    <path d="M60 22 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z" fill="#fff"/>
+    ${face}${mag}</svg>`;
+  return `<svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#f0d68a"><circle cx="30" cy="48" r="9"/><circle cx="29" cy="62" r="9"/><circle cx="34" cy="75" r="8"/><circle cx="90" cy="48" r="9"/><circle cx="91" cy="62" r="9"/><circle cx="86" cy="75" r="8"/></g>
+    <rect x="45" y="118" width="13" height="26" fill="#2fae5f"/><rect x="62" y="118" width="13" height="26" fill="#2fae5f"/>
+    <rect x="42" y="136" width="17" height="14" rx="5" fill="#d9b25f"/><rect x="61" y="136" width="17" height="14" rx="5" fill="#d9b25f"/>
+    <rect x="35" y="82" width="50" height="42" rx="15" fill="#2f5d9b"/>
+    <path d="M37 96 L25 114" stroke="#2f5d9b" stroke-width="12" stroke-linecap="round"/><path d="M83 96 L92 106" stroke="#2f5d9b" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="24" cy="116" r="6" fill="${skin}"/>
+    <circle cx="60" cy="100" r="8" fill="#e0483e"/><circle cx="56" cy="104" r="5" fill="#fff" opacity=".7"/>
+    <circle cx="60" cy="54" r="30" fill="${skin}"/>
+    <path d="M30 44 Q30 15 60 15 Q90 15 90 44Z" fill="#4a4f5a"/>
+    <path d="M26 44 Q60 32 94 44 Q60 53 26 44Z" fill="#363a44"/>
+    ${face}
+    <g fill="rgba(255,255,255,.3)" stroke="#333" stroke-width="2.5"><ellipse cx="49" cy="57" rx="10" ry="8.5"/><ellipse cx="71" cy="57" rx="10" ry="8.5"/></g><path d="M59 56 h2" stroke="#333" stroke-width="2.5"/>
+    ${mag}</svg>`;
+}
+function voffen(){return `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="50" cy="82" rx="26" ry="24" fill="#b9824f"/><ellipse cx="50" cy="86" rx="14" ry="14" fill="#e3bd8d"/>
+  <ellipse cx="30" cy="102" rx="10" ry="6" fill="#9c6a3c"/><ellipse cx="70" cy="102" rx="10" ry="6" fill="#9c6a3c"/>
+  <ellipse cx="22" cy="42" rx="10" ry="20" fill="#8a5a30" transform="rotate(15 22 42)"/><ellipse cx="78" cy="42" rx="10" ry="20" fill="#8a5a30" transform="rotate(-15 78 42)"/>
+  <circle cx="50" cy="40" r="27" fill="#b9824f"/><ellipse cx="50" cy="50" rx="14" ry="11" fill="#e3bd8d"/>
+  <circle cx="40" cy="36" r="3.5" fill="#222"/><circle cx="60" cy="36" r="3.5" fill="#222"/><ellipse cx="50" cy="46" rx="5" ry="3.5" fill="#222"/>
+  <path d="M44 53 Q50 58 56 53" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+  <rect x="38" y="62" width="24" height="6" rx="3" fill="#e0483e"/></svg>`}
+function solo(){return `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+  <path d="M78 80 Q96 70 90 54" fill="none" stroke="#1c1c22" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="50" cy="84" rx="25" ry="22" fill="#1c1c22"/><ellipse cx="50" cy="82" rx="11" ry="10" fill="#b5652a"/>
+  <ellipse cx="32" cy="102" rx="10" ry="6" fill="#b5652a"/><ellipse cx="68" cy="102" rx="10" ry="6" fill="#b5652a"/>
+  <circle cx="50" cy="38" r="25" fill="#1c1c22"/>
+  <path d="M27 26 Q10 34 14 58 Q16 74 24 70 Q22 78 31 73 Q36 60 34 30Z" fill="#1c1c22"/>
+  <path d="M73 26 Q90 34 86 58 Q84 74 76 70 Q78 78 69 73 Q64 60 66 30Z" fill="#1c1c22"/>
+  <ellipse cx="50" cy="49" rx="14" ry="11" fill="#b5652a"/>
+  <circle cx="40" cy="27" r="3" fill="#b5652a"/><circle cx="60" cy="27" r="3" fill="#b5652a"/>
+  <circle cx="40" cy="35" r="4" fill="#fff"/><circle cx="60" cy="35" r="4" fill="#fff"/><circle cx="40.5" cy="35.5" r="2.6" fill="#3a2414"/><circle cx="60.5" cy="35.5" r="2.6" fill="#3a2414"/>
+  <ellipse cx="50" cy="44" rx="6" ry="4.2" fill="#111"/>
+  <path d="M44 52 Q50 58 56 52" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+  <rect x="36" y="61" width="28" height="7" rx="3.5" fill="#d8232f"/><circle cx="50" cy="69" r="3" fill="none" stroke="#c9c9c9" stroke-width="1.6"/></svg>`}
+const YARD=`<svg class="scene" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="500" fill="#bfe3ff"/>
+  <path d="M-20 260 L90 90 L190 260Z" fill="#7d8aa5"/><path d="M90 90 L60 137 L80 128 L95 142 L112 126 L122 140Z" fill="#fff"/>
+  <path d="M120 260 L270 60 L430 260Z" fill="#6b7896"/><path d="M270 60 L230 113 L255 102 L272 122 L292 100 L312 116Z" fill="#fff"/>
+  <rect y="250" width="400" height="250" fill="#d8c08a"/><rect y="250" width="400" height="22" fill="#9cc56d"/>
+  <path d="M190 190 L300 150 L410 190Z" fill="#7b7f88"/><rect x="200" y="188" width="200" height="110" fill="#b3352c"/>
+  <rect x="268" y="222" width="64" height="76" fill="#8f2620" stroke="#fff" stroke-width="5"/><path d="M268 222 L332 298 M332 222 L268 298" stroke="#fff" stroke-width="5"/>
+  <rect x="218" y="212" width="28" height="22" fill="#fff"/></svg>`;
+
+/* ---------- lyd ---------- */
+let ac=null,master=null,musicG=null,musicOn=true,nextT=0,beat=0;
+const CH=[[261.6,329.6,392],[220,261.6,329.6],[174.6,220,261.6],[196,246.9,293.7]],MEL=[523.3,587.3,659.3,784,880];
+function initAudio(){
+  if(ac){if(ac.state==='suspended')ac.resume().catch(()=>{});return}
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    master=ac.createGain();master.gain.value=.6;master.connect(ac.destination);
+    musicG=ac.createGain();musicG.gain.value=musicOn?1:0;musicG.connect(master);
+    nextT=ac.currentTime+.1;setInterval(sched,200);
+  }catch(e){ac=null}
+}
+function tone(f,t,d,type,g,dest){
+  const o=ac.createOscillator(),a=ac.createGain();o.type=type;o.frequency.value=f;
+  a.gain.setValueAtTime(0,t);a.gain.linearRampToValueAtTime(g,t+Math.min(.5,d/3));a.gain.linearRampToValueAtTime(0,t+d);
+  o.connect(a);a.connect(dest);o.start(t);o.stop(t+d+.05);
+}
+function sched(){
+  if(!ac||ac.state!=='running')return;
+  if(nextT<ac.currentTime)nextT=ac.currentTime+.05;
+  while(nextT<ac.currentTime+1){
+    const c=CH[Math.floor(beat/8)%4];
+    if(beat%8===0)c.forEach(f=>tone(f/2,nextT,4.3,'sine',.07,musicG));
+    if(beat%2===0)tone(c[(beat/2)%3],nextT,1,'triangle',.035,musicG);
+    if(Math.random()<.3)tone(MEL[Math.floor(Math.random()*5)],nextT,1.4,'sine',.03,musicG);
+    beat++;nextT+=.5;
+  }
+}
+function sfx(ok){if(!ac)return;try{const t=ac.currentTime;if(ok){tone(660,t,.18,'sine',.16,master);tone(990,t+.13,.3,'sine',.16,master)}else tone(190,t,.25,'triangle',.14,master)}catch(e){}}
+let voice=null;
+function pickVoice(){try{const v=speechSynthesis.getVoices();voice=v.find(x=>/^nb/i.test(x.lang))||v.find(x=>/^no/i.test(x.lang))||null}catch(e){}}
+if('speechSynthesis' in window){pickVoice();try{speechSynthesis.onvoiceschanged=pickVoice}catch(e){}}
+let utt=null;
+function speak(text,pitch,onstart,onend){
+  if(!('speechSynthesis' in window))return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='nb-NO';if(voice)u.voice=voice;u.rate=.92;u.pitch=pitch||1.2;
+    if(onstart)u.onstart=onstart;if(onend)u.onend=onend;utt=u;speechSynthesis.speak(u)}catch(e){}
+}
+
+/* ---------- kodelås ---------- */
+let code='0303',entry='',setting=false;
+function lockUI(){
+  $('#lockmsg').textContent=setting?'Voksen: velg en kode med 4 tall':'Skriv koden';
+  document.querySelectorAll('#dots i').forEach((d,i)=>d.classList.toggle('f',i<entry.length));
+}
+$('#duo').innerHTML=kid('ester')+kid('magnus');
+$('#pE').innerHTML=kid('ester');$('#pM').innerHTML=kid('magnus');
+['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(k=>{
+  const b=document.createElement(k?'button':'span');b.textContent=k;
+  if(k)b.onclick=()=>{
+    initAudio();
+    if(k==='⌫')entry=entry.slice(0,-1);else if(entry.length<4)entry+=k;
+    lockUI();
+    if(entry.length===4)setTimeout(()=>{
+      if(setting){code=entry;store.set('em_kode',code);setting=false;sfx(true);openWho()}
+      else if(entry===code){sfx(true);openWho()}
+      else{sfx(false);$('#dots').classList.add('shake');setTimeout(()=>$('#dots').classList.remove('shake'),450)}
+      entry='';lockUI();
+    },180);
+  };
+  $('#pad').appendChild(b);
+});
+lockUI();
+
+/* ---------- velg detektiv og meny ---------- */
+function openWho(){show('who');speak('Hvem vil du være? Ester eller Magnus?')}
+document.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{initAudio();S.me=b.dataset.who;openMenu(true)});
+$('#swap').onclick=openWho;
+const MISSIONS=[
+  {id:'voffen',e:'🧸',t:'Voffen er forsvunnet',go:()=>startVoffen()},
+  {id:'godteri',e:'🍬',t:'Lørdagsgodteriet er borte',go:()=>startGodteri()},
+  {id:'barnehage',e:'🏫',t:'Hvor er de voksne i barnehagen?',go:()=>startBarnehage()},
+  {id:'katt',e:'🐱',t:'Katten sitter fast i treet',go:()=>startKatt()}
+];
+function openMenu(greet){
+  S.run++;show('menu');
+  $('#hello').textContent='Hei, detektiv '+N[S.me]+'!';
+  const done=(store.get('em_done')||'').split(',');
+  $('#cards').innerHTML=MISSIONS.map(m=>`<button class="card" data-id="${m.id}">${done.includes(m.id)?'<span class="done">⭐</span>':''}<span class="big">${m.e}</span>${m.t}</button>`).join('');
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{
+    const m=MISSIONS.find(x=>x.id===c.dataset.id);
+    sfx(true);m.go();
+  });
+  if(greet)speak('Hei, detektiv '+N[S.me]+'! Velg et oppdrag.');
+}
+$('#home').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}openMenu(false)};
+$('#mus').onclick=()=>{initAudio();musicOn=!musicOn;if(musicG)musicG.gain.value=musicOn?1:0;$('#mus').classList.toggle('off',!musicOn)};
+$('#hint').onclick=()=>{if(!S.hint||S.busy)return;toast('💡 '+S.hint);speak(S.hint)};
+let toastT=0;
+function toast(t){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast'}stage.appendChild(el);el.textContent=t;el.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>el.style.display='none',5000)}
+
+/* ---------- spillmotor ---------- */
+const P=()=>S.me==='ester'?'magnus':'ester';
+const W=w=>w==='me'?S.me:w==='pa'?P():w;
+function renderStars(){$('#stars').innerHTML=Array.from({length:S.total},(_,i)=>`<span class="${i<S.stars?'':'e'}">⭐</span>`).join('')}
+function star(){S.stars++;renderStars();sfx(true)}
+function later(fn,ms){const r=S.run;setTimeout(()=>{if(r===S.run)fn()},ms)}
+function chars(){return ['me','pa'].map(k=>`<div class="ch ${k==='pa'?'flip':''}" id="c_${k}" style="left:${S.pos[k][0]}%;top:${S.pos[k][1]}%"><div class="in">${kid(W(k))}</div></div>`).join('')}
+function setStage(bg,html,pos,noch){if(pos)S.pos=pos;S.busy=false;stage.className=bg;stage.innerHTML=html+(noch?'':chars())}
+function mk(it,fn){
+  const b=document.createElement(it.tag||'button');b.className='it '+(it.c||'');
+  b.style.cssText=`left:${it.x}%;top:${it.y}%;font-size:${it.s||4}rem`;b.innerHTML=it.e;
+  if(fn)b.onclick=()=>{if(S.busy)return;S.busy=true;fn(it,b)};
+  stage.appendChild(b);return b;
+}
+function pop(b){b.classList.remove('opened');void b.offsetWidth;b.classList.add('opened')}
+function walk(x,y,cb){
+  const cl=(v,a,c)=>Math.max(a,Math.min(c,v));
+  const t={me:[cl(x-12,9,91),cl(y+10,S.floor,98)],pa:[cl(x+13,9,91),cl(y+12,S.floor,98)]};
+  let far=0;
+  ['me','pa'].forEach(k=>{const el=$('#c_'+k),o=S.pos[k];if(!el)return;
+    far=Math.max(far,Math.abs(o[0]-t[k][0])+Math.abs(o[1]-t[k][1]));
+    el.classList.toggle('flip',t[k][0]<o[0]);el.classList.add('walk');el.style.left=t[k][0]+'%';el.style.top=t[k][1]+'%'});
+  S.pos=t;
+  later(()=>{['me','pa'].forEach(k=>{const el=$('#c_'+k);if(el){el.classList.remove('walk');el.classList.toggle('flip',k==='pa')}});cb()},far<4?150:850);
+}
+function say(who,text,cb){
+  const id=++S.sayId,run=S.run,k=W(who),isKid=typeof k==='string';
+  const av=isKid?kid(k):k.e,name=isKid?N[k]:k.n,pitch=isKid?(k==='ester'?1.5:1.2):k.p;
+  S.last=[text,pitch];
+  panel.innerHTML=`<div class="av">${av}</div><div class="bub"><b>${name}</b>${text}</div><div class="btns"><button class="rep" aria-label="Hør igjen">🔊</button></div>`;
+  const untalk=()=>document.querySelectorAll('.ch').forEach(e=>e.classList.remove('talk'));
+  untalk();if(who==='me'||who==='pa'){const e=$('#c_'+who);if(e)e.classList.add('talk')}
+  let fired=false,started=false,quick=0,safety=0,probe=0;
+  const fin=()=>{
+    if(fired||id!==S.sayId||run!==S.run)return;fired=true;
+    clearTimeout(safety);clearTimeout(probe);clearTimeout(quick);untalk();
+    if(cb)setTimeout(()=>{if(run===S.run)cb()},300);
+  };
+  safety=setTimeout(fin,4000+text.length*130);
+  probe=setTimeout(()=>{if(!started)quick=setTimeout(fin,1000+text.length*75)},900);
+  panel.querySelector('.bub').onclick=()=>{if(S.busy){try{speechSynthesis.cancel()}catch(e){}fin()}};
+  panel.querySelector('.rep').onclick=()=>{if(!S.busy)speak(text,pitch)};
+  speak(text,pitch,()=>{started=true},fin);
+}
+function convo(lines,done){S.busy=true;let i=0;const nx=()=>{if(i>=lines.length){S.busy=false;return done&&done()}const l=lines[i++];say(l[0],l[1],nx)};nx()}
+function board(bg,R,cb){
+  const opts=shuffle(R.opts);
+  setStage(bg,`<div class="col board">${R.show?`<div class="showbox">${R.show}</div>`:''}<div class="opts n${opts.length}">${opts.map((o,i)=>`<button data-i="${i}">${o.e}</button>`).join('')}</div></div>`);
+  S.hint=R.hint;
+  stage.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>{
+    if(S.busy)return;
+    if(opts[b.dataset.i].ok){b.classList.add('ok');sfx(true);convo(R.right,cb)}
+    else{sfx(false);b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),450);convo([['pa','Prøv en gang til.']])}
+  });
+  convo(R.q);
+}
+const TREES='<span class="deco" style="left:7%;top:6%">🌲</span><span class="deco" style="left:88%;top:10%">🌲</span><span class="deco" style="left:4%;top:60%">🌲</span>';
+function tracks(q,ems,pos,hint,endLines,cb,start){
+  const es=shuffle(ems),need=es.filter(e=>e==='🐾').length,cnt=['Ett potespor!','To potespor!','Tre potespor!'];let n=0;
+  setStage('bg-snow',TREES,start);S.floor=30;S.hint=hint;
+  pos.forEach((p,i)=>mk({e:es[i],x:p[0],y:p[1],s:3.4},(it,b)=>walk(it.x,it.y,()=>{
+    pop(b);
+    if(it.e!=='🐾'){sfx(false);return convo([['me','Nei, det er ikke et potespor.']])}
+    if(it.done){S.busy=false;return}
+    it.done=true;b.classList.add('okk');sfx(true);n++;
+    if(n===need)convo(endLines,cb);else convo([['me',cnt[n-1]]]);
+  })));
+  convo(q);
+}
+
+/* ---------- oppdrag 1: Voffen ---------- */
+function startVoffen(){
+  S.run++;S.stars=0;S.total=6;S.floor=70;renderStars();show('game');
+  const Me=N[S.me],Pa=N[P()];
+  const soloC={e:solo(),n:'Solo',p:1.8},hone={e:'🐔',n:'Høna',p:1.9},katt={e:'🐱',n:'Katten',p:1.6},sau={e:'🐑',n:'Sauen',p:.7};
+  const steps=[
+    /* soverommet */
+    d=>{
+      const items=[
+        {e:'🛏️',x:30,y:56,s:5.2,clue:'🐾',l:[['me',`Se under senga, ${Pa}! Gjørmete potespor!`],['pa','Det er et spor! Noen med poter har vært her.']]},
+        {e:'🚪',x:84,y:40,s:5.6,clue:'💨',door:1,l:[['me',`Se, ${Pa}! Døra står åpen.`],['pa','Kanskje Voffen har gått ut der?']]},
+        {e:'🧺',x:62,y:68,s:3.6,clue:'🧦',l:[['me','Se! En sokk med tyggemerker i kurven.'],['pa','Hm. Hvem liker å tygge på sokker?']]},
+        {e:'📚',x:56,y:28,s:3.4,l:[['me','Bare bøker her.'],['pa','Ingen Voffen. Vi leter videre.']]},
+        {e:'🧸',x:14,y:72,s:3,l:[['me','En bamse! Men det er ikke Voffen.']]},
+        {e:'🖼️',x:22,y:20,s:3.6,l:[['pa','Fint bilde. Men ingen spor her.']]},
+        {e:'🪴',x:91,y:72,s:3,l:[['me','Bare en plante.'],['pa','Vi leter et annet sted.']]}];
+      let found=0,exit=false,doorB=null;
+      setStage('bg-room','',{me:[40,95],pa:[58,96]});S.floor=70;
+      S.hint='Det er tre spor. Se under senga, i kurven og ved døra.';
+      items.forEach(it=>{const b=mk(it,(it,b)=>{
+        if(exit&&it.door)return walk(it.x,it.y,d);
+        walk(it.x,it.y,()=>{
+          pop(b);let extra=[];
+          if(it.clue&&!it.done){it.done=true;found++;sfx(true);b.insertAdjacentHTML('beforeend',`<span class="cl">${it.clue}</span>`);
+            if(found===3)extra=[['pa','Tre spor! Potespor, en tygget sokk og en åpen dør.'],['me','Noen med poter har gått ut døra. Trykk på døra, så følger vi etter!']];}
+          convo(it.l.concat(extra),()=>{if(extra.length){star();exit=true;doorB.classList.add('glow');S.hint='Trykk på døra.'}});
+        });
+      });if(it.door)doorB=b});
+      convo([['pa',`${Me}! ${S.me==='ester'?'Voffen din':'Voffen min'} er borte!`],['me',`Å nei! Vi er detektiver, ${Pa}. Vi finner ${S.me==='ester'?'Voffen min':'Voffen din'}.`],['pa','Trykk på tingene i rommet, så leter vi etter spor sammen.']]);
+    },
+    /* sporene i snøen */
+    d=>tracks([['pa',`Så mange spor i snøen, ${Me}! Hvilket er et potespor?`]],['👣','🐾','🛞'],[[22,42],[50,34],[78,42]],
+      'Et potespor har en stor pute og fire små tær.',[['me','Her! En stor pute og fire små tær.']],d,{me:[40,95],pa:[58,96]}),
+    d=>tracks([['me','Sporene går videre. Hvor er potesporet nå?']],['🐾','👣','❄️','🍂'],[[70,26],[26,32],[48,52],[80,58]],
+      'Se etter det med fire små tær.',[['pa','Der! Bra sett!']],d),
+    d=>tracks([['pa','Oi, her er det mange spor! Vi må finne alle tre potesporene.']],['🐾','🐾','🐾','👣','👣','🛞','❄️','🍂','🍂'],
+      [[18,30],[50,26],[82,30],[24,50],[54,48],[84,52],[18,70],[50,70],[80,72]],'Det er tre potespor. Trykk på alle tre.',
+      [['me','Tre potespor!'],['pa','Sporene går mot låven. Trykk på låven, så går vi dit!']],
+      ()=>{star();S.hint='Trykk på låven.';mk({e:'🏠',x:50,y:8,s:4,c:'glow'},it=>walk(it.x,it.y,d))}),
+    /* tunet */
+    d=>{
+      setStage('bg-yard',YARD,{me:[35,96],pa:[52,97]});S.floor=64;S.hint='Trykk på høna, katten og sauen.';
+      const an=[
+        {a:hone,e:'🐔',x:18,y:72,no:'Kakk! Det var ikke meg.',l:[[hone,'Kakk, kakk! Jeg så noen med fire bein og en hale som logret.'],['me','Fire bein og en hale som logrer. Det husker vi!']]},
+        {a:katt,e:'🐱',x:42,y:64,no:'Mjau. Ikke meg!',l:[[katt,'Mjau. Det var ikke meg! Den som løp forbi sa voff, voff.'],['pa','Voff, voff? Det høres ut som en hund.']]},
+        {a:sau,e:'🐑',x:82,y:78,no:'Bæ! Ikke meg.',l:[[sau,'Bæ! Noen løp mot låven med noe mykt i munnen.'],['me','Noe mykt? Det må være Voffen!']]}];
+      let heard=0,phase=1;
+      an.forEach(x=>{x.s=4.2;mk(x,(it,b)=>walk(it.x,it.y,()=>{
+        pop(b);
+        if(phase===2){sfx(false);return convo([[it.a,it.no]])}
+        let extra=[];
+        if(!it.h){it.h=true;heard++;b.classList.add('heard');
+          if(heard===3)extra=[['pa','Fire bein, logrende hale og voff, voff. Hvem tok Voffen?'],['me','Se, noen titter fram ved låven! Trykk på den som tok Voffen.']];}
+        convo(it.l.concat(extra),()=>{
+          if(!extra.length)return;
+          phase=2;S.hint='Hvilket dyr sier voff og logrer med halen?';
+          pop(mk({e:solo(),x:60,y:62,s:4},(i2,b2)=>walk(i2.x,i2.y,()=>{
+            sfx(true);
+            convo([[soloC,'Voff!'],['me','Det var Solo! Hun har Voffen i munnen!'],['pa','Hun løper inn i låven! Trykk på låvedøra.']],()=>{
+              star();b2.remove();S.hint='Trykk på låvedøra.';
+              mk({e:'',x:75,y:52,c:'glow hot'},()=>walk(75,54,d));
+            });
+          })));
+        });
+      }))});
+      convo([['me','Sporene stopper her på tunet.'],['pa','Se, der er høna, katten og sauen. Trykk på dem, så spør vi hva de så.']]);
+    },
+    /* låsen */
+    d=>{
+      S.pos={me:[13,98],pa:[87,98]};
+      const r3=()=>board('bg-barn',{q:[['pa','Rød, blå, rød, blå, rød. Hvilken farge kommer nå?']],hint:'Fargene bytter på. Annenhver er rød og blå.',show:'🔴🔵🔴🔵🔴❓',opts:[{e:'🔵',ok:1},{e:'🔴'},{e:'🟡'}],
+        right:[['me','Blå!'],['pa','Klikk! Låsen gikk opp. Trykk på låsen, så går vi inn.']]},()=>{
+          star();setStage('bg-barn','');S.floor=30;S.hint='Trykk på låsen.';mk({e:'🔓',x:50,y:38,s:6,c:'glow'},it=>walk(it.x,it.y,d))});
+      const r2=()=>board('bg-barn',{q:[['pa','Og hvor mange egg ligger i høyet?']],hint:'Tell bare eggene.',show:'🥚🌼🥚🥚🌼🥚',opts:[{e:'2'},{e:'3'},{e:'4',ok:1},{e:'5'}],right:[['me','Fire egg!']]},r3);
+      board('bg-barn',{q:[['me','Å nei, låvedøra er låst!'],['pa',`Det er en kodelås. Hvor mange høner ser du, ${Me}? Tell dem.`]],hint:'Pek på hver høne og tell. Ikke tell sauene.',show:'🐔🐑🐔🐔🐑🐔🐔',opts:[{e:'3'},{e:'4'},{e:'5',ok:1},{e:'6'}],right:[['me','Fem høner!']]},r2);
+    },
+    /* memory i høyet */
+    d=>{
+      const cards=shuffle(['🥕','🥕','🧤','🧤','🔔','🔔','🥚','🥚']);let open=[],left=4,wait=false;
+      setStage('bg-barn',`<div class="col board"><div class="mem">${cards.map((c,i)=>`<button data-i="${i}">🌾</button>`).join('')}</div></div>`,{me:[13,98],pa:[87,98]});
+      S.hint='Snu to høyballer. Husk hvor tingene ligger.';
+      stage.querySelectorAll('.mem button').forEach(b=>b.onclick=()=>{
+        if(S.busy||wait||b.classList.contains('up'))return;
+        b.classList.add('up');b.textContent=cards[b.dataset.i];open.push(b);
+        if(open.length<2)return;
+        const [a,c]=open;open=[];
+        if(a.textContent===c.textContent){a.classList.add('m');c.classList.add('m');sfx(true);
+          if(--left===0){star();convo([['me','Hysj! Hører du? Noen snorker.'],['pa','En høyball rører på seg. Trykk på den!']],d)}
+        }else{wait=true;later(()=>{[a,c].forEach(x=>{x.classList.remove('up');x.textContent='🌾'});wait=false},900)}
+      });
+      convo([['me','Så mye høy! Solo har gjemt mange ting her.'],['pa','Trykk på to høyballer og finn to som er like.']]);
+    },
+    /* høyballen som rører seg */
+    d=>{
+      const hit=Math.floor(Math.random()*4),pos=[[25,28],[72,24],[30,58],[75,62]];
+      setStage('bg-barn','',{me:[40,96],pa:[58,97]});S.floor=30;S.hint='Se nøye. En av høyballene rører på seg.';
+      pos.forEach((q,i)=>mk({e:'🌾',x:q[0],y:q[1],s:5.2,c:i===hit?'wig':''},(it,b)=>walk(it.x,it.y,()=>{
+        if(i!==hit){sfx(false);return convo([['me','Ingen her.'],['pa','Se etter den som rører på seg.']])}
+        star();S.spot=q;stage.querySelectorAll('.it').forEach(e=>e.remove());d();
+      })));
+    },
+    /* funnet */
+    d=>{
+      const q=S.spot;S.hint='Trykk på bamsen.';
+      mk({tag:'div',e:voffen()+solo()+'<span class="zz">💤</span>',x:q[0],y:q[1],s:4,c:'pair'});
+      convo([['me','Der er Voffen! Og Solo sover ved siden av.'],[soloC,'Voff. Unnskyld. Jeg ville bare ha en kosevenn.'],['pa','Solo var bare ensom. Hun trenger noe mykt å sove med.'],['me','Vi gir henne en egen bamse! Trykk på bamsen.']],()=>{
+        mk({e:'🧸',x:q[0]>50?22:78,y:82,s:4,c:'glow'},(it,b)=>walk(it.x,it.y,()=>{
+          b.classList.remove('glow');sfx(true);
+          convo([[soloC,'Voff, voff! Tusen takk!'],['pa',`Mysteriet er løst! Bra jobba, detektiv ${Me}!`]],d);
+        }));
+      });
+    },
+    d=>finish('voffen',voffen())
+  ];
+  let i=0;const run=S.run;
+  const next=()=>{if(run!==S.run||i>=steps.length)return;steps[i++](next)};
+  next();
+}
+
+/* ---------- felles byggeklosser ---------- */
+function begin(){S.run++;S.stars=0;S.total=6;S.floor=70;renderStars();show('game')}
+function run(steps){let i=0;const r=S.run;const next=()=>{if(r!==S.run||i>=steps.length)return;steps[i++](next)};next()}
+function finish(id,center){
+  const dn=(store.get('em_done')||'').split(',').filter(Boolean);if(!dn.includes(id))dn.push(id);store.set('em_done',dn.join(','));
+  let conf='';for(let i=0;i<18;i++)conf+=`<span class="conf" style="left:${Math.random()*95}%;animation-delay:${(Math.random()*3).toFixed(2)}s">${['⭐','🎉','🎈'][i%3]}</span>`;
+  setStage('bg-snow',`${conf}<div class="col"><div class="badge">🏅</div><h1>Saken er løst!</h1><div class="final">${kid('ester')}${center}${kid('magnus')}</div><button class="bigbtn" id="again">Flere oppdrag</button></div>`,null,true);
+  S.hint='';say('me','Vi er verdens beste detektiver!');
+  $('#again').onclick=()=>openMenu(false);
+}
+function goal(it,hint,d){S.hint=hint;S.busy=false;mk(Object.assign({c:'glow'},it),i=>walk(i.x,i.y,d))}
+function search(c,d){
+  const need=c.items.filter(i=>i.clue).length;let found=0,exit=false,xb=null;
+  setStage(c.bg,c.deco||'',c.start);S.floor=c.floor;S.hint=c.hint;
+  c.items.forEach(it=>{const b=mk(it,(it,b)=>{
+    if(exit&&it.exit)return walk(it.x,it.y,d);
+    walk(it.x,it.y,()=>{
+      pop(b);let hit=false;
+      if(it.clue&&!it.done){it.done=true;found++;sfx(true);b.insertAdjacentHTML('beforeend',`<span class="cl">${it.clue}</span>`);hit=found===need}
+      convo(it.l.concat(hit?c.end:[]),()=>{
+        if(!hit)return;
+        star();if(c.onDone)return c.onDone(d);
+        exit=true;S.hint=c.exitHint;
+        if(xb)xb.classList.add('glow');else mk(Object.assign({c:'glow'},c.exitItem),i=>walk(i.x,i.y,d));
+      });
+    });
+  });if(it.exit)xb=b});
+  convo(c.intro);
+}
+function hunt(c,d){
+  const its=shuffle(c.items),need=its.filter(i=>i.ok).length;let n=0;
+  setStage(c.bg,c.deco||'',c.start);S.floor=c.floor||30;S.hint=c.hint;
+  c.pos.forEach((p,i)=>{const o=its[i];mk({e:o.e,x:p[0],y:p[1],s:c.s||3.4},(it,b)=>walk(it.x,it.y,()=>{
+    pop(b);
+    if(!o.ok){sfx(false);return convo(o.l||c.wrong)}
+    if(o.done){S.busy=false;return}
+    o.done=true;b.classList.add('okk');sfx(true);n++;
+    const l=o.l||[c.cnt[n-1]];
+    if(n===need)convo(l.concat(c.end||[]),()=>{if(c.star)star();d()});else convo(l);
+  }))});
+  convo(c.q);
+}
+function witness(c,d){
+  setStage(c.bg,c.deco||'',c.start);S.floor=c.floor;S.hint=c.hint;let heard=0,phase=1;
+  c.an.forEach(x=>{x.s=x.s||4.2;mk(x,(it,b)=>walk(it.x,it.y,()=>{
+    pop(b);
+    if(phase===2){sfx(false);return convo([[it.a,it.no]])}
+    let extra=[];
+    if(!it.h){it.h=true;heard++;b.classList.add('heard');if(heard===c.an.length)extra=c.ask}
+    convo(it.l.concat(extra),()=>{
+      if(!extra.length)return;
+      if(!c.culprit)return d();
+      phase=2;S.hint=c.culprit.hint;
+      pop(mk(c.culprit,(i2,b2)=>walk(i2.x,i2.y,()=>{sfx(true);convo(c.culprit.l,()=>{star();d()})})));
+    });
+  }))});
+  convo(c.intro);
+}
+function boards(list,d){S.pos={me:[13,98],pa:[87,98]};let i=0;const nx=()=>{if(i>=list.length){star();return d()}const R=list[i++];board(R.bg||'bg-barn',R,nx)};nx()}
+function memory(c,d){
+  const cards=shuffle(c.cards.concat(c.cards));let open=[],left=c.cards.length,wait=false;
+  setStage(c.bg,`<div class="col board"><div class="mem">${cards.map((x,i)=>`<button data-i="${i}">${c.back||'❔'}</button>`).join('')}</div></div>`,{me:[13,98],pa:[87,98]});
+  S.hint='Snu to kort. Husk hvor tingene ligger.';
+  stage.querySelectorAll('.mem button').forEach(b=>b.onclick=()=>{
+    if(S.busy||wait||b.classList.contains('up'))return;
+    b.classList.add('up');b.textContent=cards[b.dataset.i];open.push(b);
+    if(open.length<2)return;
+    const [a,e]=open;open=[];
+    if(a.textContent===e.textContent){a.classList.add('m');e.classList.add('m');sfx(true);if(--left===0){star();convo(c.end,d)}}
+    else{wait=true;later(()=>{[a,e].forEach(x=>{x.classList.remove('up');x.textContent=c.back||'❔'});wait=false},900)}
+  });
+  convo(c.intro);
+}
+function order(c,d){
+  let k=0;setStage(c.bg,c.deco||'',c.start);S.floor=0;S.hint=c.hint;
+  c.pos.forEach((p,i)=>mk({e:String(i+1),x:p[0],y:p[1],c:'num'},(it,b)=>{
+    const want=c.seq[k];
+    if(i+1!==want){sfx(false);return convo([['pa',`Nei, nå må vi ta nummer ${want}.`]])}
+    walk(it.x,it.y-6,()=>{b.classList.add('okk');sfx(true);k++;if(k===c.seq.length)convo(c.end,()=>{star();d()});else S.busy=false});
+  }));
+  convo(c.q);
+}
+const GRASS='<span class="deco" style="left:5%;top:7%">🌳</span><span class="deco" style="left:78%;top:9%">🛝</span>';
+const TREE=`<svg class="scene" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="500" fill="#bfe3ff"/><rect y="440" width="400" height="60" fill="#9cc56d"/>
+  <rect x="176" y="90" width="48" height="370" rx="10" fill="#8a5a34"/>
+  <g stroke="#8a5a34" stroke-width="16" stroke-linecap="round"><path d="M200 400 L120 370"/><path d="M200 330 L290 300"/><path d="M200 260 L115 230"/><path d="M200 190 L285 160"/></g>
+  <g fill="#4f9e4a"><ellipse cx="200" cy="80" rx="150" ry="85"/><ellipse cx="95" cy="225" rx="62" ry="40"/><ellipse cx="310" cy="160" rx="62" ry="40"/><ellipse cx="100" cy="365" rx="55" ry="34"/><ellipse cx="310" cy="298" rx="58" ry="36"/></g></svg>`;
+
+/* ---------- oppdrag 2: lørdagsgodteriet ---------- */
+function startGodteri(){
+  begin();const Me=N[S.me],Pa=N[P()];
+  const pappa={e:'🧔',n:'Pappa',p:.7},katt={e:'🐱',n:'Katten',p:1.6},fisk={e:'🐠',n:'Gullfisken',p:2},soloC={e:solo(),n:'Solo',p:1.8};
+  run([
+    d=>search({bg:'bg-room',floor:70,start:{me:[40,95],pa:[58,96]},hint:'Se i godteskåla, ved søppelbøtta og på lappen.',exitHint:'Trykk på døra.',
+      items:[
+        {e:'🥣',x:30,y:52,s:4.6,clue:'❌',l:[['me',`Se, ${Pa}! Godteskåla er helt tom.`],['pa','Og det er lørdag! Dette er et mysterium.']]},
+        {e:'🗑️',x:62,y:68,s:3.6,clue:'🍬',l:[['me','Det ligger godtepapir ved søppelbøtta.'],['pa','Noen har mistet papir på veien. Det er et spor!']]},
+        {e:'📝',x:56,y:28,s:3.4,clue:'❓',l:[['pa','En lapp! Det står: Følg papirene.'],['me','Følg papirene? Så rart.']]},
+        {e:'🍎',x:14,y:72,s:3,l:[['me','Bare frukt her.'],['pa','Sunt, men det er ikke lørdagsgodteri.']]},
+        {e:'🪑',x:91,y:74,s:3.4,l:[['me','Ingenting under stolen.']]},
+        {e:'🕰️',x:22,y:20,s:3.4,l:[['pa','Klokka tikker. Vi må finne godteriet før kvelden!']]},
+        {e:'🚪',x:84,y:40,s:5.6,exit:1,l:[['me','Døra går ut til gangen.'],['pa','Vi leter ferdig her først.']]}],
+      intro:[['me',`${Pa}! Det er lørdag, men godteskåla er tom!`],['pa','Å nei! Lørdagsgodteriet er borte. Vi må lete etter spor.'],['me','Trykk på tingene på kjøkkenet, så leter vi sammen.']],
+      end:[['pa','Tom skål, godtepapir og en lapp. Vi følger papirene!'],['me','Trykk på døra, så går vi ut i gangen.']]},d),
+    d=>hunt({bg:'bg-floor',start:{me:[40,95],pa:[58,96]},hint:'Godtepapir er rosa og blankt.',q:[['pa','Her i gangen ligger det mange ting. Finn godtepapiret!']],
+      items:[{e:'🍬',ok:1},{e:'🧦'},{e:'👟'}],pos:[[22,42],[50,34],[78,42]],wrong:[['me','Nei, det er ikke godtepapir.']],cnt:[['me','Der er et godtepapir!']]},d),
+    d=>hunt({bg:'bg-floor',hint:'Det er tre godtepapir. Trykk på alle tre.',q:[['me','Flere papirer! Vi må finne alle tre.']],star:1,
+      items:[{e:'🍬',ok:1},{e:'🍬',ok:1},{e:'🍬',ok:1},{e:'🧦'},{e:'🧦'},{e:'👟'},{e:'🧢'},{e:'🧤'},{e:'🎒'}],
+      pos:[[18,30],[50,26],[82,30],[24,50],[54,48],[84,52],[18,70],[50,70],[80,72]],wrong:[['me','Nei, det er ikke godtepapir.']],
+      cnt:[['me','Ett papir!'],['me','To papirer!'],['me','Tre papirer!']],end:[['pa','Papirene går inn i stua. Trykk på sofaen, så går vi dit!']]},d),
+    d=>goal({e:'🛋️',x:50,y:8,s:4},'Trykk på sofaen.',d),
+    d=>witness({bg:'bg-room',floor:70,start:{me:[40,95],pa:[58,96]},hint:'Trykk på katten, gullfisken og Solo.',
+      an:[
+        {a:katt,e:'🐱',x:20,y:60,no:'Mjau. Jeg har ikke tøfler.',l:[[katt,'Mjau. Jeg så to store føtter med tøfler gå forbi.'],['me','Store føtter med tøfler. Det husker vi!']]},
+        {a:fisk,e:'🐠',x:50,y:30,no:'Blubb. Jeg bor i en bolle.',l:[[fisk,'Blubb, blubb. Den som gikk forbi, bar på en stor kiste.'],['pa','En kiste? Kanskje godteriet er i den!']]},
+        {a:soloC,e:solo(),x:76,y:72,s:3.6,no:'Voff! Ikke meg!',l:[[soloC,'Voff! Det var ikke meg denne gangen. Den som gikk forbi, luktet kaffe.'],['me','Kaffe! Det drikker bare de voksne.']]}],
+      intro:[['me','Papirene stopper her i stua.'],['pa','Katten, gullfisken og Solo er her. Trykk på dem, så spør vi hva de så.']],
+      ask:[['pa','Store føtter, tøfler og kaffe. Hvem kan det være?'],['me','Se, noen gjemmer seg ved døra! Trykk på den som tok godteriet.']],
+      culprit:{e:'🧔',x:88,y:38,s:4.4,hint:'Hvem er stor, har tøfler og drikker kaffe?',
+        l:[[pappa,'Ha, ha! Dere fant meg, detektiver!'],[pappa,'Jeg har gjemt godteriet i en skattekiste. Klarer dere å åpne den?'],['pa','En skattekiste! Trykk på kista.']]}},d),
+    d=>goal({e:'🧰',x:48,y:74,s:4.4},'Trykk på skattekista.',d),
+    d=>boards([
+      {bg:'bg-floor',q:[['pa',`Kista har en kodelås. Hvor mange kjærligheter på pinne ser du, ${Me}?`]],hint:'Tell bare kjærlighetene på pinne.',show:'🍭🍬🍭🍭🍬🍭',opts:[{e:'3'},{e:'4',ok:1},{e:'5'},{e:'6'}],right:[['me','Fire!']]},
+      {bg:'bg-floor',q:[['pa','Drops, kjærlighet, drops, kjærlighet, drops. Hva kommer nå?']],hint:'De bytter på. Annenhver gang.',show:'🍬🍭🍬🍭🍬❓',opts:[{e:'🍭',ok:1},{e:'🍬'},{e:'🍫'}],right:[['me','Kjærlighet på pinne!']]},
+      {bg:'bg-floor',q:[['pa','Siste lås. Hvilken av disse er ikke godteri?']],hint:'En av dem vokser i jorda.',opts:[{e:'🍫'},{e:'🍭'},{e:'🥕',ok:1},{e:'🍬'}],right:[['me','Gulrota!'],['pa','Klikk! Kista er åpen. Men godteriet ligger hulter til bulter.']]}],d),
+    d=>memory({bg:'bg-floor',back:'🎁',cards:['🍫','🍭','🍬','🍪'],intro:[['me','Vi sorterer godteriet. Finn to og to som er like.']],end:[['pa','Nå er alt sortert!']]},d),
+    d=>boards([
+      {bg:'bg-floor',q:[['pa','Vi har seks drops og er to detektiver. Hvor mange får hver, hvis vi deler likt?']],hint:'Del dropsene i to like store hauger.',show:'🍬🍬🍬 🍬🍬🍬',opts:[{e:'2'},{e:'3',ok:1},{e:'4'}],right:[['me','Tre til deg og tre til meg!']]},
+      {bg:'bg-floor',q:[['me','Solo vil også ha noe. Men hunder tåler ikke godteri. Hva kan Solo få?']],hint:'Hva liker hunder å tygge på?',opts:[{e:'🍫'},{e:'🦴',ok:1},{e:'🍭'}],right:[[soloC,'Voff! Et bein! Tusen takk!'],[pappa,`God lørdag, detektiv ${Me} og detektiv ${Pa}!`]]}],d),
+    d=>finish('godteri','<span>🍬</span>')
+  ]);
+}
+
+/* ---------- oppdrag 3: barnehagen ---------- */
+function startBarnehage(){
+  begin();const Me=N[S.me],Pa=N[P()];
+  const lar={e:'👩‍🏫',n:'Læreren',p:1},fugl={e:'🐦',n:'Fuglen',p:2},ekorn={e:'🐿️',n:'Ekornet',p:1.7},snegl={e:'🐌',n:'Sneglen',p:.6};
+  run([
+    d=>search({bg:'bg-room',floor:70,start:{me:[40,95],pa:[58,96]},hint:'Se på ballongen, glitteret og lappen.',exitHint:'Trykk på døra.',
+      items:[
+        {e:'🎈',x:30,y:50,s:4.2,clue:'❗',l:[['me',`Se, ${Pa}! En ballong i garderoben.`],['pa','Rart. Det pleier ikke å være ballonger her.']]},
+        {e:'✨',x:62,y:70,s:3.4,clue:'✂️',l:[['me','Glitter på gulvet!'],['pa','Noen har klippet og limt. Det er et spor.']]},
+        {e:'📝',x:56,y:28,s:3.4,clue:'🤫',l:[['pa','En lapp. Det står: Hysj! Ikke si noe til barna.'],['me','En hemmelighet! Så spennende.']]},
+        {e:'🥾',x:14,y:72,s:3,l:[['me','Bare støvler her.']]},
+        {e:'🎒',x:91,y:74,s:3.2,l:[['pa','En sekk med matpakke. Ingen voksne i den.']]},
+        {e:'🧥',x:22,y:20,s:3.6,l:[['me','Jakkene til de voksne henger her.'],['pa','Da kan de ikke ha gått langt!']]},
+        {e:'🚪',x:84,y:40,s:5.6,exit:1,l:[['me','Døra går ut til lekeplassen.'],['pa','Vi leter ferdig her først.']]}],
+      intro:[['pa',`${Me}! Det er ingen voksne i barnehagen i dag!`],['me','Så rart! Hvor har de blitt av? Vi må lete etter spor.'],['pa','Trykk på tingene i garderoben.']],
+      end:[['pa','En ballong, glitter og en hemmelig lapp.'],['me','De voksne holder på med noe! Trykk på døra, så leter vi ute.']]},d),
+    d=>hunt({bg:'bg-grass',floor:34,start:{me:[40,95],pa:[58,96]},hint:'Ballongen er rød og rund.',q:[['pa','Det ligger noe på lekeplassen. Finn ballongen!']],
+      items:[{e:'🎈',ok:1},{e:'🍂'},{e:'⚽'}],pos:[[22,46],[50,40],[78,46]],wrong:[['me','Nei, det er ikke en ballong.']],cnt:[['me','En ballong til!']]},d),
+    d=>hunt({bg:'bg-grass',floor:34,hint:'Det er tre ballonger. Trykk på alle tre.',q:[['me','Det er flere ballonger! Vi må finne alle tre.']],star:1,
+      items:[{e:'🎈',ok:1},{e:'🎈',ok:1},{e:'🎈',ok:1},{e:'🍂'},{e:'🍂'},{e:'⚽'},{e:'🪣'},{e:'🌼'},{e:'🌼'}],
+      pos:[[18,34],[50,32],[82,34],[24,52],[54,50],[84,54],[18,72],[50,72],[80,74]],wrong:[['me','Nei, det er ikke en ballong.']],
+      cnt:[['me','En ballong!'],['me','To ballonger!'],['me','Tre ballonger!']],end:[['pa','Kanskje dyrene har sett noe? Trykk på treet, så spør vi dem.']]},d),
+    d=>goal({e:'🌳',x:50,y:12,s:4.4},'Trykk på treet.',d),
+    d=>witness({bg:'bg-grass',deco:GRASS,floor:50,start:{me:[40,95],pa:[58,96]},hint:'Trykk på fuglen, ekornet og sneglen.',
+      an:[
+        {a:fugl,e:'🐦',x:22,y:42,l:[[fugl,'Pip, pip! Jeg så de voksne bære en stor kake.'],['me','En kake? Mmm!']]},
+        {a:ekorn,e:'🐿️',x:52,y:60,l:[[ekorn,'Jeg så dem henge opp ballonger og flagg.'],['pa','Ballonger og flagg. Det høres ut som pynt.']]},
+        {a:snegl,e:'🐌',x:80,y:78,l:[[snegl,'De hvisket og lo. Og så sa de hysj.'],['me','De har en hemmelighet!']]}],
+      intro:[['me','Her er det noen dyr.'],['pa','Trykk på dem, så spør vi hva de har sett.']],
+      ask:[['pa','Kake, pynt og en hemmelighet. Nå tror jeg at jeg vet det!']]},d),
+    d=>boards([{bg:'bg-grass',q:[['pa',`Hva tror du de voksne holder på med, ${Me}?`]],hint:'Kake, ballonger og hemmeligheter. Hva er det?',opts:[{e:'🎉',ok:1},{e:'😴'},{e:'🚀'}],
+      right:[['me','De lager en fest!'],['pa','En overraskelsesfest! Kom, vi går til det store rommet.']]}],d),
+    d=>{setStage('bg-grass',GRASS,{me:[40,95],pa:[58,96]});S.floor=50;goal({e:'🚪',x:50,y:42,s:6},'Trykk på døra.',d)},
+    d=>boards([
+      {bg:'bg-wall',q:[['me','Døra er låst med en kodelås.'],['pa','Hvor mange ballonger ser du? Tell dem.']],hint:'Tell bare ballongene, ikke stjernene.',show:'🎈⭐🎈🎈⭐🎈🎈🎈',opts:[{e:'4'},{e:'5'},{e:'6',ok:1},{e:'7'}],right:[['me','Seks ballonger!']]},
+      {bg:'bg-wall',q:[['pa','Gul, grønn, gul, grønn, gul. Hva kommer nå?']],hint:'Fargene bytter på.',show:'🟡🟢🟡🟢🟡❓',opts:[{e:'🟢',ok:1},{e:'🟡'},{e:'🔴'}],right:[['me','Grønn!']]},
+      {bg:'bg-wall',q:[['pa','Siste lås. Hvilken form har fire kanter?']],hint:'Tell kantene på hver form.',opts:[{e:'🔺'},{e:'🟦',ok:1},{e:'⚪'}],right:[['me','Firkanten!'],['pa','Klikk! Døra er åpen. Men det er helt mørkt der inne.']]}],d),
+    d=>search({bg:'bg-dark',floor:62,start:{me:[40,95],pa:[58,96]},hint:'Lysbryteren er høyt oppe til høyre.',
+      items:[
+        {e:'🪑',x:20,y:56,c:'dim',l:[['me','Au! Det var bare en stol.']]},
+        {e:'🧹',x:46,y:40,c:'dim',l:[['pa','En kost. Ikke en voksen.']]},
+        {e:'🪣',x:68,y:66,c:'dim',l:[['me','En bøtte. Vi leter videre.']]},
+        {e:'💡',x:85,y:32,c:'dim',clue:'✅',l:[['me','Jeg fant lysbryteren! Klikk!']]}],
+      intro:[['me','Så mørkt det er!'],['pa','Vi må finne lysbryteren. Trykk rundt i rommet.']],end:[],
+      onDone:d=>{
+        stage.className='bg-party';stage.querySelectorAll('.it').forEach(e=>e.remove());
+        [['🎈',12,14],['🎈',88,12],['🎊',50,10],['👩‍🏫',26,50],['🎂',50,54],['👨‍🍳',74,50]].forEach(q=>mk({tag:'div',e:q[0],x:q[1],y:q[2],s:4.4}));
+        convo([[lar,'Overraskelse!'],[lar,'Vi har laget fest for alle barna i barnehagen!'],['pa','Der er de voksne! Mysteriet er løst.'],[lar,'Vil dere hjelpe oss å pynte ferdig?']],d);
+      }},d),
+    d=>memory({bg:'bg-party',back:'🎁',cards:['🎈','🎂','🎉','🧁'],intro:[['me','Vi pynter til festen! Finn to og to som er like.']],end:[[lar,`Tusen takk, detektiv ${Me} og detektiv ${Pa}! Nå er festen klar.`]]},d),
+    d=>finish('barnehage','<span>🎂</span>')
+  ]);
+}
+
+/* ---------- oppdrag 4: katten i treet ---------- */
+function startKatt(){
+  begin();const Me=N[S.me],Pa=N[P()];
+  const pus={e:'🐱',n:'Pus',p:1.9},hone={e:'🐔',n:'Høna',p:1.9};
+  const steg=[[40,84],[62,70],[40,56],[62,42],[44,28]];
+  run([
+    d=>search({bg:'bg-yard',deco:YARD,floor:64,start:{me:[45,96],pa:[62,97]},hint:'Hør på høna, se på bakken og se opp i treet.',exitHint:'Trykk på låvedøra.',
+      items:[
+        {e:'🐔',x:16,y:76,clue:'👂',l:[[hone,'Kakk! Jeg hører mjauing høyt der oppe.'],['me','Høyt oppe? Så rart.']]},
+        {e:'🐾',x:44,y:84,s:3,clue:'👀',l:[['me','Kattespor! De går bort til treet.'],['pa','Bra sett! Vi følger dem.']]},
+        {e:'🌳',x:26,y:42,s:7,clue:'🐱',l:[['pa','Der! Pus sitter helt øverst i treet!'],[pus,'Mjau! Jeg tør ikke gå ned!']]},
+        {e:'🪣',x:56,y:70,s:3,l:[['me','En tom bøtte. Ingen katt her.']]},
+        {e:'🚜',x:90,y:82,s:4,l:[['pa','Ingen katt i traktoren.']]}],
+      intro:[['me','Hører du? Noen mjauer.'],['pa','Det er Pus! Men hvor er hun? Trykk rundt på tunet og let.']],
+      end:[['pa','Stakkars Pus. Vi må hjelpe henne ned.'],['me','Vi trenger stigen. Trykk på låvedøra, så leter vi i låven.']],
+      exitItem:{e:'',x:75,y:52,c:'glow hot'}},d),
+    d=>hunt({bg:'bg-barn',start:{me:[40,96],pa:[58,97]},hint:'Vi trenger stigen, hanskene og fisken.',star:1,
+      q:[['pa','Vi trenger tre ting: en stige, hansker og en fisk til Pus. Finn dem!']],
+      items:[{e:'🪜',ok:1,l:[['me','Stigen! Den trenger vi.']]},{e:'🧤',ok:1,l:[['pa','Hansker. Lurt når vi skal klatre.']]},{e:'🐟',ok:1,l:[['me','En fisk! Det liker Pus.']]},
+        {e:'🧹'},{e:'🪣'},{e:'🔨'},{e:'⚽'},{e:'🧺'},{e:'🎣'}],
+      pos:[[18,28],[50,24],[82,28],[24,48],[54,46],[84,50],[18,68],[50,68],[80,70]],wrong:[['pa','Den trenger vi ikke nå.']],
+      end:[['pa','Nå har vi alt. Trykk på døra, så går vi tilbake til treet!']]},d),
+    d=>goal({e:'🚪',x:50,y:8,s:4},'Trykk på døra.',d),
+    d=>boards([
+      {bg:'bg-grass',q:[['pa','Treet er høyt. Hvilken stige er lengst?']],hint:'Den lengste stigen er den største.',
+        opts:[{e:'<span style="font-size:.4em">🪜</span>'},{e:'<span style="font-size:.7em">🪜</span>'},{e:'<span style="font-size:1.15em">🪜</span>',ok:1}],right:[['me','Den lengste!']]},
+      {bg:'bg-grass',q:[['pa','Hvor mange greiner må vi klatre forbi? Tell bladene.']],hint:'Tell bare de grønne bladene, ikke eplene.',show:'🌿🍎🌿🌿🍎🌿🌿',opts:[{e:'4'},{e:'5',ok:1},{e:'6'},{e:'7'}],right:[['me','Fem greiner!']]},
+      {bg:'bg-grass',q:[['me','Pus er redd. Hva liker hun aller best?']],hint:'Hva fant vi til Pus i låven?',opts:[{e:'🐟',ok:1},{e:'🥕'},{e:'🧦'}],right:[['pa','Fisk! Den tar vi med opp.'],['me','Nå klatrer vi. Ett trinn om gangen.']]}],d),
+    d=>order({bg:'bg-tree',deco:TREE+'<span class="deco catd" style="left:43%;top:2%">🙀</span>',start:{me:[38,97],pa:[62,98]},pos:steg,seq:[1,2,3,4,5],hint:'Tell: en, to, tre, fire, fem.',
+      q:[['pa','Trykk på tallene i riktig rekkefølge. Start på nummer én!']],
+      end:[[pus,'Mjau! Jeg er så redd.'],['pa','Vi må roe henne ned. Klapp Pus forsiktig tre ganger.']]},d),
+    d=>{
+      const c=stage.querySelector('.catd');if(c)c.remove();let n=0;S.hint='Trykk på Pus.';
+      const L=['Mjau.','Purr.','Purr, purr. Nå er jeg ikke redd lenger.'];
+      mk({e:'🙀',x:50,y:9,s:3.6,c:'glow'},(it,b)=>{
+        sfx(true);pop(b);n++;if(n===3){b.innerHTML='😺';b.classList.remove('glow')}
+        convo([[pus,L[n-1]]].concat(n===3?[['me','Nå er hun rolig. Vi bærer henne ned.'],['pa','Vi teller baklengs: fem, fire, tre, to, en.']]:[]),()=>{if(n===3){star();d()}});
+      });
+    },
+    d=>order({bg:'bg-tree',deco:TREE,pos:steg,seq:[5,4,3,2,1],hint:'Tell baklengs: fem, fire, tre, to, en.',
+      q:[['pa','Nå klatrer vi ned. Start på nummer fem!']],
+      end:[[pus,'Mjau! Tusen takk. Jeg jaget en sommerfugl, og plutselig var jeg helt øverst.'],['me','Nå får du fisken din, Pus.'],['pa',`Oppdraget er løst! Bra jobba, detektiv ${Me}!`]]},d),
+    d=>finish('katt','<span>😺</span>')
+  ]);
+}
+</script>
+</body>
+</html>
